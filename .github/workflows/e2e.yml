@@ -1,0 +1,59 @@
+name: E2E (Cypress on Vercel deploy)
+
+# Run after Vercel finishes deploying. Vercel auto-deploys on push to main
+# (production) and on pull requests (preview). This job waits for that deploy
+# to report success, then runs Cypress against the deployed URL so the PR/commit
+# gets a clear pass/fail signal before anyone promotes to prod.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  cypress:
+    name: Cypress against Vercel deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Polls the GitHub deployment_status API until Vercel reports "success".
+      # Outputs the actual deployed URL (preview for PRs, production for main).
+      - name: Wait for Vercel deployment
+        id: vercel
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 600
+          check_interval: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          config: baseUrl=${{ steps.vercel.outputs.url }}
+        env:
+          # Surfaced in the job summary so the failing URL is obvious.
+          CYPRESS_BASE_URL: ${{ steps.vercel.outputs.url }}
+
+      - name: Upload Cypress artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          if-no-files-found: ignore
+          retention-days: 7
