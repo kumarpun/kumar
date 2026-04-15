@@ -17,16 +17,11 @@ name: E2E (Cypress on Vercel deploy)
 # (GitHub-integration-based) action. GitHub injects GITHUB_TOKEN automatically
 # into every workflow; you never configure it manually.
 
-# Manual trigger only — click "Run workflow" in the Actions tab after you've
-# confirmed the Vercel deployment looks good. No auto-run on push/PR so you
-# don't burn CI minutes on every commit.
 on:
-  workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: "Commit SHA to test (leave blank = branch HEAD)"
-        required: false
-        type: string
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 jobs:
   cypress:
@@ -37,13 +32,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Wait for Vercel deployment (READY) matching this commit
+      - name: Wait for deployment
         id: vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          # Use the SHA the user entered, else the branch HEAD they selected.
-          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
+          # For PRs, use the PR head SHA (what Vercel actually deploys);
+          # for pushes, github.sha is the pushed commit.
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           # The clean public production URL. Vercel's list API doesn't return
           # .alias for efficiency, and the .url field is the immutable per-deploy
           # URL that's gated behind Vercel SSO (401). Hardcoding the known
