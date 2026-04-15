@@ -10,6 +10,9 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },
+  "engines": {
+    "node": ">=20.18.0"
+  },
   "dependencies": {
     "next": "16.1.6",
     "react": "19.2.3",

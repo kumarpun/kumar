@@ -1,9 +1,22 @@
 name: E2E (Cypress on Vercel deploy)
 
-# Run after Vercel finishes deploying. Vercel auto-deploys on push to main
-# (production) and on pull requests (preview). This job waits for that deploy
-# to report success, then runs Cypress against the deployed URL so the PR/commit
-# gets a clear pass/fail signal before anyone promotes to prod.
+# Runs Cypress against the Vercel deployment for this commit.
+#
+# Instead of listening for GitHub's deployment_status events (which only fire
+# if Vercel's GitHub integration is configured to post them), this workflow
+# queries Vercel's REST API directly using a VERCEL_TOKEN. It finds the
+# deployment matching the pushed commit SHA, waits for it to reach READY,
+# then runs Cypress against that URL.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions → New repository secret):
+#   VERCEL_TOKEN       — create at https://vercel.com/account/tokens (scope: full)
+#   VERCEL_PROJECT_ID  — Vercel → Project → Settings → General → Project ID
+#                         (prj_xxxxxxxxxxxxxxxxxx)
+#
+# GITHUB_TOKEN is NOT needed here — it was only used by the previous
+# (GitHub-integration-based) action. GitHub injects GITHUB_TOKEN automatically
+# into every workflow; you never configure it manually.
+
 on:
   push:
     branches: [main, master]
@@ -19,15 +32,53 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Polls the GitHub deployment_status API until Vercel reports "success".
-      # Outputs the actual deployed URL (preview for PRs, production for main).
-      - name: Wait for Vercel deployment
+      - name: Wait for Vercel deployment (READY) matching this commit
         id: vercel
-        uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          max_timeout: 600
-          check_interval: 10
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # For PRs, use the PR head SHA (what Vercel actually deploys);
+          # for pushes, github.sha is the pushed commit.
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::error::VERCEL_TOKEN and VERCEL_PROJECT_ID repo secrets must be set."
+            exit 1
+          fi
+
+          echo "Looking for Vercel deployment for commit: $COMMIT_SHA"
+
+          deadline=$((SECONDS + 600))  # 10 minute overall cap
+          while [ $SECONDS -lt $deadline ]; do
+            json=$(curl -sSf -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&limit=20")
+
+            match=$(echo "$json" | jq -c --arg sha "$COMMIT_SHA" \
+              'first(.deployments[] | select(.meta.githubCommitSha == $sha))')
+
+            if [ -n "$match" ] && [ "$match" != "null" ]; then
+              state=$(echo "$match" | jq -r '.readyState // .state')
+              url=$(echo "$match" | jq -r '.url')
+              echo "Vercel deployment for $COMMIT_SHA -> state=$state url=https://$url"
+              case "$state" in
+                READY)
+                  echo "url=https://$url" >> "$GITHUB_OUTPUT"
+                  exit 0
+                  ;;
+                ERROR|CANCELED)
+                  echo "::error::Vercel deployment ended in state=$state. Cypress will not run."
+                  exit 1
+                  ;;
+              esac
+            else
+              echo "No Vercel deployment for $COMMIT_SHA yet; waiting..."
+            fi
+            sleep 10
+          done
+
+          echo "::error::Timed out after 10m waiting for a READY Vercel deployment for $COMMIT_SHA."
+          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,9 +94,6 @@ jobs:
         with:
           browser: chrome
           config: baseUrl=${{ steps.vercel.outputs.url }}
-        env:
-          # Surfaced in the job summary so the failing URL is obvious.
-          CYPRESS_BASE_URL: ${{ steps.vercel.outputs.url }}
 
       - name: Upload Cypress artifacts on failure
         if: failure()
