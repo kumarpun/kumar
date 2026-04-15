@@ -59,11 +59,26 @@ jobs:
 
             if [ -n "$match" ] && [ "$match" != "null" ]; then
               state=$(echo "$match" | jq -r '.readyState // .state')
-              url=$(echo "$match" | jq -r '.url')
-              echo "Vercel deployment for $COMMIT_SHA -> state=$state url=https://$url"
+              target=$(echo "$match" | jq -r '.target // ""')
+              immutable_url=$(echo "$match" | jq -r '.url')
+
+              # For production deploys, prefer the shortest alias — that's the
+              # clean public URL (e.g. kumar-ten.vercel.app). The .url field is
+              # always the immutable per-deploy URL, which Vercel puts behind
+              # SSO by default and returns 401 to Cypress.
+              # For previews, fall back to the immutable URL (you'll need a
+              # VERCEL_AUTOMATION_BYPASS_SECRET later if protection is on).
+              if [ "$target" = "production" ]; then
+                chosen=$(echo "$match" | jq -r '[.alias[]?] | sort_by(length) | .[0] // empty')
+                url="https://${chosen:-$immutable_url}"
+              else
+                url="https://$immutable_url"
+              fi
+
+              echo "Vercel deployment for $COMMIT_SHA -> state=$state target=$target url=$url"
               case "$state" in
                 READY)
-                  echo "url=https://$url" >> "$GITHUB_OUTPUT"
+                  echo "url=$url" >> "$GITHUB_OUTPUT"
                   exit 0
                   ;;
                 ERROR|CANCELED)
