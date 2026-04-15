@@ -40,6 +40,11 @@ jobs:
           # For PRs, use the PR head SHA (what Vercel actually deploys);
           # for pushes, github.sha is the pushed commit.
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          # The clean public production URL. Vercel's list API doesn't return
+          # .alias for efficiency, and the .url field is the immutable per-deploy
+          # URL that's gated behind Vercel SSO (401). Hardcoding the known
+          # production alias is the simplest robust path.
+          PRODUCTION_URL: https://kumar-ten.vercel.app
         run: |
           set -euo pipefail
           if [ -z "${VERCEL_TOKEN:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; then
@@ -62,15 +67,9 @@ jobs:
               target=$(echo "$match" | jq -r '.target // ""')
               immutable_url=$(echo "$match" | jq -r '.url')
 
-              # For production deploys, prefer the shortest alias — that's the
-              # clean public URL (e.g. kumar-ten.vercel.app). The .url field is
-              # always the immutable per-deploy URL, which Vercel puts behind
-              # SSO by default and returns 401 to Cypress.
-              # For previews, fall back to the immutable URL (you'll need a
-              # VERCEL_AUTOMATION_BYPASS_SECRET later if protection is on).
+              # Production → public alias (no SSO wall). Preview/other → immutable URL.
               if [ "$target" = "production" ]; then
-                chosen=$(echo "$match" | jq -r '[.alias[]?] | sort_by(length) | .[0] // empty')
-                url="https://${chosen:-$immutable_url}"
+                url="$PRODUCTION_URL"
               else
                 url="https://$immutable_url"
               fi
