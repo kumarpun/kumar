@@ -1,110 +1,134 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
 const navLinks = [
   { href: "#about", label: "About" },
-  { href: "#skills", label: "Skills" },
+  { href: "#skills", label: "Toolkit" },
   { href: "#experience", label: "Experience" },
-  { href: "#projects", label: "Projects" },
+  { href: "#projects", label: "Work" },
   { href: "#education", label: "Education" },
   { href: "#contact", label: "Contact" },
 ];
 
-export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
+function ThemeToggle({ className = "" }) {
   const { dark, setDark } = useTheme();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <a href="#" className="text-xl font-bold tracking-tight">
+    <button
+      type="button"
+      onClick={() => setDark((value) => !value)}
+      aria-label={`Switch to ${dark ? "light" : "dark"} theme`}
+      className={`flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted transition-colors duration-300 hover:border-accent hover:text-accent ${className}`}
+    >
+      <svg
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        {dark ? (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 3v2m0 14v2m9-9h-2M5 12H3m14.7-6.7l-1.4 1.4M7.7 16.3l-1.4 1.4m12 0l-1.4-1.4M7.7 7.7L6.3 6.3M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+          />
+        ) : (
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"
+          />
+        )}
+      </svg>
+    </button>
+  );
+}
+
+export default function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "border-b border-border bg-background/75 shadow-[var(--lift-1)] backdrop-blur-xl"
+          : "border-b border-transparent"
+      }`}
+    >
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <a
+          href="#"
+          className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight"
+        >
           Kumar<span className="text-accent">Pun</span>
         </a>
 
-        {/* Desktop nav */}
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
-                className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+                className="rounded-full px-3.5 py-2 font-mono text-[11px] tracking-widest text-muted uppercase transition-colors duration-300 hover:text-accent"
               >
                 {link.label}
               </a>
             </li>
           ))}
-          <li>
-            <button
-              onClick={() => setDark(!dark)}
-              aria-label="Toggle theme"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-card"
-            >
-              {dark ? (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+          <li className="ml-2">
+            <ThemeToggle />
           </li>
         </ul>
 
-        {/* Mobile: theme toggle + menu button */}
-        <div className="flex items-center gap-3 md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
           <button
-            onClick={() => setDark(!dark)}
-            aria-label="Toggle theme"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-card"
-          >
-            {dark ? (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M12 3v1m0 16v1m8.66-13.66l-.71.71M4.05 19.95l-.71.71M21 12h-1M4 12H3m16.66 7.66l-.71-.71M4.05 4.05l-.71-.71M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
-          <button
-            className="flex flex-col gap-1.5"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-full border border-border"
           >
             <span
-              className={`block h-0.5 w-6 bg-foreground transition-transform ${menuOpen ? "translate-y-2 rotate-45" : ""}`}
+              className={`h-px w-4 bg-foreground transition-transform duration-300 ${
+                menuOpen ? "translate-y-[3.5px] rotate-45" : ""
+              }`}
             />
             <span
-              className={`block h-0.5 w-6 bg-foreground transition-opacity ${menuOpen ? "opacity-0" : ""}`}
-            />
-            <span
-              className={`block h-0.5 w-6 bg-foreground transition-transform ${menuOpen ? "-translate-y-2 -rotate-45" : ""}`}
+              className={`h-px w-4 bg-foreground transition-transform duration-300 ${
+                menuOpen ? "-translate-y-[3.5px] -rotate-45" : ""
+              }`}
             />
           </button>
         </div>
       </nav>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <ul className="border-t border-border bg-background px-6 py-4 md:hidden">
+      {menuOpen ? (
+        <ul className="border-t border-border bg-background/95 px-6 py-4 backdrop-blur-xl md:hidden">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
-                className="block py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
                 onClick={() => setMenuOpen(false)}
+                className="block py-2.5 font-mono text-[11px] tracking-widest text-muted uppercase"
               >
                 {link.label}
               </a>
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </header>
   );
 }

@@ -10,37 +10,262 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-card: var(--card);
+  --color-pass: var(--pass);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
 }
 
+/* ---------- palette: cool lab paper, signal orange, jade pass ---------- */
 html {
-  --background: #ffffff;
-  --foreground: #171717;
-  --accent: #2563eb;
-  --accent-light: #3b82f6;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --card: #f9fafb;
+  --background: #eef1f8;
+  --foreground: #0b1220;
+  --card: #ffffff;
+  --border: #d5dcea;
+  --muted: #5a6376;
+  --accent: #e8501f;
+  --accent-light: #ff6b35;
+  --pass: #0d9668;
+
+  /* two-point lighting for the 3D surfaces: warm key, cool fill */
+  --key: rgba(232, 80, 31, 0.18);
+  --fill: rgba(37, 99, 235, 0.14);
+  --sheen: rgba(255, 255, 255, 0.85);
+  --grid-line: rgba(11, 18, 32, 0.055);
+
+  --pane: rgba(255, 255, 255, 0.72);
+  --pane-edge: rgba(11, 18, 32, 0.1);
+  --lift-1: 0 1px 2px rgba(11, 18, 32, 0.05), 0 8px 20px -8px rgba(11, 18, 32, 0.14);
+  --lift-2: 0 2px 4px rgba(11, 18, 32, 0.06), 0 24px 48px -20px rgba(11, 18, 32, 0.24);
+  --lift-3: 0 4px 8px rgba(11, 18, 32, 0.07), 0 48px 88px -32px rgba(11, 18, 32, 0.32);
+
   scroll-behavior: smooth;
+  color-scheme: light;
 }
 
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --accent: #3b82f6;
-  --accent-light: #60a5fa;
-  --muted: #9ca3af;
-  --border: #27272a;
-  --card: #18181b;
+  --background: #070b14;
+  --foreground: #e6eaf2;
+  --card: #0f1521;
+  --border: #1e2635;
+  --muted: #8b94a7;
+  --accent: #ff7a45;
+  --accent-light: #ffa077;
+  --pass: #2bd98a;
+
+  --key: rgba(255, 122, 69, 0.26);
+  --fill: rgba(56, 189, 248, 0.2);
+  --sheen: rgba(255, 255, 255, 0.09);
+  --grid-line: rgba(230, 234, 242, 0.05);
+
+  --pane: rgba(20, 27, 41, 0.72);
+  --pane-edge: rgba(230, 234, 242, 0.1);
+  --lift-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --lift-2: 0 2px 4px rgba(0, 0, 0, 0.55), 0 24px 48px -20px rgba(0, 0, 0, 0.75);
+  --lift-3: 0 4px 8px rgba(0, 0, 0, 0.6), 0 48px 88px -32px rgba(0, 0, 0, 0.85);
+
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 section[id] {
   scroll-margin-top: 5rem;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---------- ambient backdrop: engineering grid + two lights ---------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 78% -8%, var(--key), transparent 62%),
+    radial-gradient(52rem 38rem at 8% 34%, var(--fill), transparent 60%);
+}
+
+.backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(closest-side at 50% 22%, #000 20%, transparent 92%);
+  -webkit-mask-image: radial-gradient(closest-side at 50% 22%, #000 20%, transparent 92%);
+}
+
+/* ---------- 3D primitives ---------- */
+.scene {
+  perspective: 1400px;
+  perspective-origin: 50% 42%;
+}
+
+.scene-near {
+  perspective: 900px;
+}
+
+.d3 {
+  transform-style: preserve-3d;
+}
+
+/* pointer-driven tilt; Tilt.jsx writes --rx/--ry/--mx/--my.
+   --base-rx/--base-ry give a surface a resting angle, so depth is visible
+   before the pointer arrives and the tilt returns to it on leave. */
+.tilt {
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--base-rx, 0deg) + var(--rx, 0deg)))
+    rotateY(calc(var(--base-ry, 0deg) + var(--ry, 0deg)));
+  transition: transform 600ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: transform;
+}
+
+.tilt[data-live="1"] {
+  transition: transform 90ms linear;
+}
+
+/* specular highlight that tracks the pointer across a lifted surface */
+.sheen {
+  position: relative;
+  isolation: isolate;
+}
+
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms ease;
+  background: radial-gradient(
+    18rem 18rem at var(--mx, 50%) var(--my, 0%),
+    var(--sheen),
+    transparent 70%
+  );
+}
+
+.sheen[data-live="1"]::after {
+  opacity: 1;
+}
+
+/* a lifted surface: card that sits above the page rather than on it */
+.slab {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--lift-1);
+  transition: box-shadow 400ms ease, border-color 400ms ease;
+}
+
+.slab-lift:hover,
+.slab-lift:focus-within {
+  box-shadow: var(--lift-3);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+/* translucent pane used inside the hero rig */
+.pane {
+  background: var(--pane);
+  border: 1px solid var(--pane-edge);
+  border-radius: 12px;
+  box-shadow: var(--lift-2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* children pushed forward in Z so the stack has real depth */
+.z1 { transform: translateZ(18px); }
+.z2 { transform: translateZ(40px); }
+.z3 { transform: translateZ(72px); }
+
+/* ---------- motion ---------- */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0) rotateX(7deg);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    transform 700ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
+}
+
+.drift {
+  animation: drift 7s ease-in-out infinite;
+}
+
+.drift-slow {
+  animation: drift 11s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% { transform: translateY(-110%); }
+  100% { transform: translateY(320%); }
+}
+
+.sweep {
+  animation: sweep 4.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .drift,
+  .drift-slow,
+  .pulse-dot,
+  .sweep {
+    animation: none;
+  }
+
+  .tilt {
+    --rx: 0deg;
+    --ry: 0deg;
+    transition: none;
+  }
+
+  .sheen::after {
+    display: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

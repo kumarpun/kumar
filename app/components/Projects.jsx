@@ -1,116 +1,120 @@
+import Reveal from "./Reveal";
+import Tilt from "./Tilt";
+import SectionHeading from "./SectionHeading";
+
 const projects = [
   {
     name: "Australian Tenders",
-    url: "https://www.australiantenders.com.au/",
-    description:
-      "A tender solution for suppliers, buyers, and issuers. A central repository for tender opportunities where users can search and discover tenders.",
-    tech: [
-      "Express.js",
-      "EJS",
-      "MySQL",
-      "AWS",
-      "Cypress",
-      "Bitbucket Pipelines",
-    ],
+    domain: "australiantenders.com.au",
+    url: "https://australiantenders.com.au",
+    summary:
+      "Tender search and alerts. I own the Cypress suite and the Bitbucket pipeline it runs in.",
+    tech: ["Express.js", "EJS", "MySQL", "AWS", "Cypress", "Bitbucket Pipelines"],
   },
   {
     name: "DiGii Social",
-    url: "https://digiisocial.com/",
-    description:
-      "A secure, school-based platform that educates and prepares children on how to interact responsibly with others online. Training wheels for social media.",
-    tech: [
-      "Node.js",
-      "Express.js",
-      "React",
-      "MySQL",
-      "AWS",
-      "WebSocket/Socket.io",
-      "Cypress",
-      "GitHub Actions",
-    ],
+    domain: "digiisocial.com",
+    url: "https://digiisocial.com",
+    summary:
+      "Real-time social platform. Socket.io traffic is the hard part to test, so that is where the coverage went.",
+    tech: ["Node.js", "React", "MySQL", "AWS", "Socket.io", "Cypress", "GitHub Actions"],
   },
   {
     name: "Plant with Willow",
-    url: "https://plantwithwillow.com.au/",
-    description:
-      "An Australian e-commerce platform selling smart plant monitoring technology with IoT sensors and a mobile app to track plant health metrics like moisture, light, and humidity.",
+    domain: "plantwithwillow.com.au",
+    url: "https://plantwithwillow.com.au",
+    summary:
+      "Flutter app with a Python backend. Tested the ordering flow across devices.",
     tech: ["Flutter", "Python", "Cypress"],
   },
   {
     name: "BD Water",
-    url: "https://www.bdwater.com.au/",
-    description:
-      "A platform where users can trade and request water licenses.",
+    domain: "bdwater.com.au",
+    url: "https://bdwater.com.au",
+    summary:
+      "Ordering and delivery scheduling on an Angular front end over a Node and Mongo stack.",
     tech: ["Angular", "Node.js", "MongoDB", "AWS"],
   },
   {
     name: "EnthuZiastic",
-    url: "https://enthu.com/",
-    description:
-      "A community-driven platform for enthusiasts passionate about learning and sharing new skills every day by enrolling in courses.",
-    tech: [
-      "Svelte",
-      "Node.js",
-      "GraphQL",
-      "MySQL",
-      "Cypress",
-      "Appium",
-      "GitHub Actions",
-    ],
+    domain: "enthu.com",
+    url: "https://enthu.com",
+    summary:
+      "Live class marketplace. GraphQL coverage on the API, Appium on mobile, both running in parallel on CI.",
+    tech: ["Svelte", "GraphQL", "MySQL", "Cypress", "Appium", "GitHub Actions"],
   },
   {
     name: "Vivint",
-    url: "https://www.vivint.com/",
-    description:
-      "A smart home security platform offering home automation, security cameras, and monitoring services for residential customers.",
-    tech: [],
+    domain: "vivint.com",
+    url: "https://vivint.com",
+    summary: "Smart home platform. Manual and regression passes across releases.",
+    tech: ["Manual Testing", "Regression"],
   },
 ];
 
 export default function Projects() {
   return (
-    <section id="projects" className="bg-card py-14 px-6">
-      <div className="mx-auto max-w-5xl">
-        <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">
-          Projects
-        </h2>
+    <section id="projects" className="scene px-6 py-24 sm:py-28">
+      <div className="mx-auto max-w-6xl">
+        <SectionHeading
+          eyebrow="Work"
+          title="Products"
+        />
+
         <div className="grid gap-6 sm:grid-cols-2">
-          {projects.map((project) => (
-            <a
-              key={project.name}
-              href={project.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-xl border border-border bg-background p-6 transition-all hover:border-accent/50 hover:shadow-lg"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-semibold group-hover:text-accent">
-                  {project.name}
-                </h3>
-                <svg
-                  className="h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
+          {projects.map((project, index) => (
+            <Reveal key={project.name} delay={(index % 2) * 90}>
+              <Tilt max={8} className="h-full">
+                <a
+                  href={project.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="slab sheen slab-lift d3 group block h-full p-7"
                 >
-                  <path d="M7 17L17 7M17 7H7M17 7v10" />
-                </svg>
-              </div>
-              <p className="mb-4 text-sm leading-relaxed text-muted">
-                {project.description}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {project.tech.map((t) => (
-                  <span
-                    key={t}
-                    className="rounded-full bg-card px-2.5 py-0.5 text-xs text-muted"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </a>
+                  <div className="z1 flex h-full flex-col">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-[family-name:var(--font-display)] text-xl font-semibold">
+                          {project.name}
+                        </h3>
+                        <p className="mt-1 font-mono text-[11px] tracking-wide text-muted">
+                          {project.domain}
+                        </p>
+                      </div>
+                      <svg
+                        className="h-4 w-4 shrink-0 text-muted transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7 17L17 7M17 7H8m9 0v9"
+                        />
+                      </svg>
+                    </div>
+
+                    <p className="mt-4 flex-1 text-sm leading-relaxed text-muted">
+                      {project.summary}
+                    </p>
+
+                    <ul className="mt-6 flex flex-wrap gap-2">
+                      {project.tech.map((item) => (
+                        <li
+                          key={item}
+                          className="rounded-full border border-border px-3 py-1 font-mono text-[11px] text-muted"
+                        >
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </a>
+              </Tilt>
+            </Reveal>
           ))}
         </div>
       </div>

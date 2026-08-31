@@ -2,16 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-const ThemeContext = createContext({ dark: false, setDark: () => {} });
+const ThemeContext = createContext({ dark: true, setDark: () => {} });
 
 export function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(false);
+  // dark is the default; only an explicit stored "light" opts out. The
+  // matching pre-paint script in layout.jsx keeps the class in sync so the
+  // first frame is already the right theme.
+  const [dark, setDark] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      setDark(true);
+    if (localStorage.getItem("theme") === "light") {
+      setDark(false);
     }
     setMounted(true);
   }, []);

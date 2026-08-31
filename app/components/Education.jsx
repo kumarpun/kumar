@@ -1,19 +1,30 @@
+import Reveal from "./Reveal";
+import Tilt from "./Tilt";
+import SectionHeading from "./SectionHeading";
+
 export default function Education() {
   return (
-    <section id="education" className="py-14 px-6">
-      <div className="mx-auto max-w-3xl">
-        <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">
-          Education
-        </h2>
-        <div className="rounded-xl border border-border p-6">
-          <p className="mb-1 text-sm font-medium text-accent">2014 - 2018</p>
-          <h3 className="text-xl font-semibold">
-            Bachelor in Computer Engineering
-          </h3>
-          <p className="text-muted">
-            S.E.A College of Engineering and Technology
-          </p>
-        </div>
+    <section id="education" className="scene px-6 py-24 sm:py-28">
+      <div className="mx-auto max-w-4xl">
+        <SectionHeading eyebrow="Education" title="Where it started" />
+
+        <Reveal>
+          <Tilt max={5}>
+            <div className="slab sheen slab-lift d3 p-8">
+              <div className="z1">
+                <p className="font-mono text-[11px] tracking-widest text-muted uppercase">
+                  2014 - 2018
+                </p>
+                <h3 className="mt-2.5 font-[family-name:var(--font-display)] text-xl font-semibold">
+                  Bachelor in Computer Engineering
+                </h3>
+                <p className="mt-1.5 text-muted">
+                  S.E.A College of Engineering and Technology
+                </p>
+              </div>
+            </div>
+          </Tilt>
+        </Reveal>
       </div>
     </section>
   );
